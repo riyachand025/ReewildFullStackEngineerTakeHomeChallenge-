@@ -33,7 +33,8 @@ function App() {
     try {
       const formData = new FormData();
       formData.append('image', image);
-      const res = await fetch('http://localhost:5050/analyze-image', {
+      const API_URL = process.env.REACT_APP_API_URL;
+      const res = await fetch(`${API_URL}analyze-image`, {
         method: 'POST',
         body: formData,
       });
@@ -41,7 +42,7 @@ function App() {
       const data = await res.json();
       setResults(data.items || []);
       // Eco-score
-      const ecoRes = await fetch('http://localhost:5050/eco-score', {
+      const ecoRes = await fetch(`${API_URL}eco-score`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: (data.items || []).map(i => i.name) })
@@ -50,7 +51,7 @@ function App() {
       const ecoData = await ecoRes.json();
       setEcoScore(ecoData);
       // Offers
-      const offersRes = await fetch(`http://localhost:5050/offers?points=${ecoData.points}`);
+      const offersRes = await fetch(`${API_URL}offers?points=${ecoData.points}`);
       if (!offersRes.ok) throw new Error('Failed to fetch offers');
       const offersData = await offersRes.json();
       setOffers(offersData.offers || []);
