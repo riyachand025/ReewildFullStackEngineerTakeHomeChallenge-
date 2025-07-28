@@ -34,8 +34,9 @@ function App() {
       // Send image to backend for recognition and eco-score in one request
       const formData = new FormData();
       formData.append('image', image);
+      const API_URL = '/api/';
 
-        const res = await fetch(`/api/analyze-image`, {
+        const res = await fetch(`${API_URL}analyze-image`, {
         method: 'POST',
         body: formData
       });
