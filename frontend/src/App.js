@@ -44,20 +44,9 @@ function App() {
       if (!res.ok) throw new Error('Image analysis failed');
       const data = await res.json();
       setResults(data.items || []);
-      // Eco-score
-      const ecoRes = await fetch(`${API_URL}eco-score`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: (data.items || []).map(i => i.name) })
-      });
-      if (!ecoRes.ok) throw new Error('Eco-score calculation failed');
-      const ecoData = await ecoRes.json();
-      setEcoScore(ecoData);
-      // Offers
-      const offersRes = await fetch(`${API_URL}offers?points=${ecoData.points}`);
-      if (!offersRes.ok) throw new Error('Failed to fetch offers');
-      const offersData = await offersRes.json();
-      setOffers(offersData.offers || []);
+      // Use the response from /api/analyze-image
+      setEcoScore(data.ecoScore || null);
+      setOffers([]); // or handle offers if you add that logic to /api/analyze-image
     } catch (err) {
       setError(err.message);
     } finally {
