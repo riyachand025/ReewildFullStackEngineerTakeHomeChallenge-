@@ -9,6 +9,7 @@ function App() {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [points, setPoints] = useState(null);
   const fileInputRef = useRef();
 
   const handleFileChange = (e) => {
@@ -30,23 +31,27 @@ function App() {
     setResults([]);
     setEcoScore(null);
     setOffers([]);
+    setPoints(null);
     try {
       // Send image to backend for recognition and eco-score in one request
       const formData = new FormData();
       formData.append('image', image);
       const API_URL = '/api/';
-
-        const res = await fetch(`${API_URL}analyze-image`, {
+      const res = await fetch(`${API_URL}analyze-image`, {
         method: 'POST',
         body: formData
       });
-
       if (!res.ok) throw new Error('Image analysis failed');
       const data = await res.json();
       setResults(data.items || []);
-      // Use the response from /api/analyze-image
       setEcoScore(data.ecoScore || null);
       setOffers([]); // or handle offers if you add that logic to /api/analyze-image
+      // Calculate reward points
+      if (data.ecoScore && typeof data.ecoScore.totalCarbon === 'number') {
+        setPoints(Math.floor(data.ecoScore.totalCarbon / 2));
+      } else {
+        setPoints(null);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -100,7 +105,7 @@ function App() {
           <h2>Eco-Score Summary</h2>
           <div className="eco-score-details">
             <span><strong>Total Carbon:</strong> {ecoScore.totalCarbon} kg CO₂</span>
-            <span><strong>Eco-Reward Points:</strong> {ecoScore.points}</span>
+            <span><strong>Eco-Reward Points:</strong> {points !== null ? points : 'N/A'}</span>
           </div>
         </section>
       )}
