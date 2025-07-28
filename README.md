@@ -6,8 +6,8 @@ EcoScan is a full-stack web application that empowers users to understand the en
 
 ## Features
 - **Upload or capture clothing images** (file upload or camera)
-- **Automatic clothing item recognition** (mocked for demo)
-- **Carbon footprint calculation** for each item
+- **Automatic clothing item recognition** using OpenAI GPT-4o Vision
+- **Carbon footprint calculation** for each item (AI-powered)
 - **Eco-reward points** based on total carbon savings
 - **Redeemable offers** based on points
 
@@ -16,7 +16,7 @@ EcoScan is a full-stack web application that empowers users to understand the en
 ## Tech Stack
 - **Frontend:** React (JavaScript, PWA-ready)
 - **Backend:** Node.js, Express
-- **Image Recognition:** Mocked (can be replaced with OpenAI Vision or other models)
+- **Image Recognition & Scoring:** OpenAI GPT-4o (Vision + Text)
 - **Storage:** In-memory (no database required)
 - **Testing:** Jest, Supertest (backend)
 
@@ -28,9 +28,19 @@ EcoScan is a full-stack web application that empowers users to understand the en
 ```bash
 cd backend
 npm install
+```
+
+#### Set up your OpenAI API key
+Create a `.env` file in the `backend` directory with:
+```
+OPENAI_API_KEY=sk-...your-key-here...
+```
+You must have access to GPT-4o and sufficient quota on your OpenAI account.
+
+```bash
 npm start
 ```
-- Runs on [http://localhost:5000](http://localhost:5000)
+- Runs on [http://localhost:5050](http://localhost:5050)
 
 ### 2. Frontend
 ```bash
@@ -53,30 +63,33 @@ npx jest
 
 ### `POST /analyze-image`
 - **Body:** `multipart/form-data` with `image` field
-- **Response:** `{ items: [{ name, carbonScore }] }`
-
-### `POST /eco-score`
-- **Body:** `{ items: ["T-shirt", "Jeans"] }`
-- **Response:** `{ totalCarbon, points }`
-
-### `GET /offers?points=15`
-- **Response:** `{ offers: [{ id, name, points }] }`
+- **Response:**
+  - If a clothing item is detected:
+    ```json
+    {
+      "items": [
+        {
+          "name": "T-shirt",
+          "probability": 0.95,
+          "carbonScore": 5,
+          "description": "A T-shirt typically has a carbon footprint of about 5kg CO2 to manufacture."
+        }
+      ],
+      "ecoScore": {
+        "totalCarbon": 5,
+        "points": 2
+      }
+    }
+    ```
+  - If no clothing is detected:
+    ```json
+    {
+      "items": [],
+      "ecoScore": null
+    }
+    ```
 
 ---
-
-## Carbon Score Assumptions
-| Item      | Carbon Score (kg CO₂) |
-|-----------|----------------------|
-| T-shirt   | 5                    |
-| Jeans     | 10                   |
-| Jacket    | 15                   |
-| Dress     | 8                    |
-| Sweater   | 7                    |
-| Shorts    | 4                    |
-| Skirt     | 6                    |
-| Shirt     | 5                    |
-| Socks     | 1                    |
-| Shoes     | 12                   |
 
 - **Eco-reward points:** 1 point per 2kg CO₂ (rounded down)
 
@@ -91,8 +104,7 @@ npx jest
 - Deploy behind a load balancer (NGINX, AWS ELB)
 
 ### 2. **Improved Carbon Scoring**
-- Integrate with real image recognition APIs (OpenAI Vision, Google Vision)
-- Use detailed lifecycle data (material, brand, age, usage)
+- Integrate with more detailed lifecycle data (material, brand, age, usage)
 - Allow user input for more accurate scoring
 
 ### 3. **User Experience Enhancements**
@@ -107,6 +119,3 @@ npx jest
 - Social sharing of eco-achievements
 
 ---
-
-## License
-MIT 
