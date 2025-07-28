@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import './App.css';
+import { Configuration, OpenAIApi } from "openai";
 
 function App() {
   const [image, setImage] = useState(null);
@@ -31,29 +32,33 @@ function App() {
     setEcoScore(null);
     setOffers([]);
     try {
-      const formData = new FormData();
-      formData.append('image', image);
-      const res = await fetch('http://localhost:5050/analyze-image', {
-        method: 'POST',
-        body: formData,
+      // Mock item recognition step (replace with actual logic if available)
+      // For demo, let's assume the user uploads a T-shirt and Jeans
+      const recognizedItems = ["T-shirt", "Jeans"];
+
+      // Call OpenAI for eco-score and descriptions
+      const configuration = new Configuration({
+        apiKey: process.env.REACT_APP_OPENAI_API_KEY,
       });
-      if (!res.ok) throw new Error('Image analysis failed');
-      const data = await res.json();
-      setResults(data.items || []);
-      // Eco-score
-      const ecoRes = await fetch('http://localhost:5050/eco-score', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: (data.items || []).map(i => i.name) })
+      const openai = new OpenAIApi(configuration);
+      const prompt = `For each of the following clothing items, estimate the carbon footprint in kg CO2 for manufacturing one item, and provide a one-sentence description. Return as JSON with keys: name, carbonScore, description. Items: ${recognizedItems.join(', ')}`;
+      const completion = await openai.createChatCompletion({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.2
       });
-      if (!ecoRes.ok) throw new Error('Eco-score calculation failed');
-      const ecoData = await ecoRes.json();
-      setEcoScore(ecoData);
-      // Offers
-      const offersRes = await fetch(`http://localhost:5050/offers?points=${ecoData.points}`);
-      if (!offersRes.ok) throw new Error('Failed to fetch offers');
-      const offersData = await offersRes.json();
-      setOffers(offersData.offers || []);
+      const gptResponse = completion.data.choices[0].message.content;
+      let gptData;
+      try {
+        gptData = JSON.parse(gptResponse);
+      } catch (e) {
+        throw new Error("Failed to parse GPT response: " + gptResponse);
+      }
+      setResults(gptData);
+      const totalCarbon = gptData.reduce((sum, item) => sum + (item.carbonScore || 0), 0);
+      const points = Math.floor(totalCarbon / 2);
+      setEcoScore({ totalCarbon, points });
+      // Offers logic can be added here if needed
     } catch (err) {
       setError(err.message);
     } finally {

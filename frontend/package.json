@@ -4,6 +4,8 @@
   "private": true,
   "dependencies": {
     "cra-template-pwa": "2.0.0",
+    "dotenv": "^17.2.1",
+    "openai": "^5.10.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-scripts": "5.0.1",
