@@ -1,11 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { OpenAIApi, Configuration } = require("openai");
+const OpenAI = require('openai');
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() });
 
-const openai = new OpenAIApi(
-  new Configuration({ apiKey: process.env.OPENAI_API_KEY })
-);
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -13,38 +13,64 @@ const PORT = process.env.PORT || 5050;
 app.use(cors());
 app.use(express.json());
 
-// POST /eco-score (GPT-powered)
-app.post('/eco-score', async (req, res) => {
-  const { items } = req.body;
-  if (!Array.isArray(items) || items.length === 0) {
-    return res.status(400).json({ error: 'No items provided' });
+// POST /analyze-image (image upload, clothing detection, and eco-score)
+app.post('/analyze-image', upload.single('image'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No image uploaded' });
   }
-
   try {
-    // Compose a prompt for GPT
-    const prompt = `For each of the following clothing items, estimate the carbon footprint in kg CO2 for manufacturing one item, and provide a one-sentence description. Return as JSON with keys: name, carbonScore, description. Items: ${items.join(', ')}`;
-
-    const completion = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo", // or "gpt-4" if available
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.2
+    // 1. Use OpenAI Vision model to detect if the image is a clothing item
+    const base64Image = req.file.buffer.toString('base64');
+    const prompt = `Is the object in this image a piece of clothing? If yes, what type of clothing is it (e.g., T-shirt, jeans, dress, etc.)? Reply in JSON: {\"isClothing\": true/false, \"name\": \"type of clothing or null\", \"probability\": 0-1 }`;
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            { type: "image_url", image_url: { url: `data:${req.file.mimetype};base64,${base64Image}` } }
+          ]
+        }
+      ],
+      max_tokens: 200
     });
-
-    // Parse GPT's response
-    const gptResponse = completion.data.choices[0].message.content;
-    let gptData;
+    const gptResponse = completion.choices[0].message.content;
+    console.log("GPT raw response:", gptResponse);
+    let detection;
     try {
-      gptData = JSON.parse(gptResponse);
+      const cleaned = gptResponse.replace(/```json|```/g, '').trim();
+      detection = JSON.parse(cleaned);
     } catch (e) {
       return res.status(500).json({ error: "Failed to parse GPT response", raw: gptResponse });
     }
-
-    // Calculate total carbon and points
-    const totalCarbon = gptData.reduce((sum, item) => sum + (item.carbonScore || 0), 0);
+    if (!detection.isClothing) {
+      return res.json({ items: [], ecoScore: null });
+    }
+    // 2. Get eco-score for the detected clothing item
+    const ecoPrompt = `For the following clothing item, estimate the carbon footprint in kg CO2 for manufacturing one item, and provide a one-sentence description. Return as JSON with keys: name, carbonScore, description. Item: ${detection.name}`;
+    const ecoCompletion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: ecoPrompt }],
+      temperature: 0.2
+    });
+    const ecoResponse = ecoCompletion.choices[0].message.content;
+    console.log("Eco raw response:", ecoResponse);
+    let ecoData;
+    try {
+      const cleanedEco = ecoResponse.replace(/```json|```/g, '').trim();
+      ecoData = JSON.parse(cleanedEco);
+    } catch (e) {
+      return res.status(500).json({ error: "Failed to parse eco-score GPT response", raw: ecoResponse });
+    }
+    const totalCarbon = ecoData.carbonScore || 0;
     const points = Math.floor(totalCarbon / 2);
-
-    res.json({ totalCarbon, points, items: gptData });
+    res.json({
+      items: [{ name: detection.name, probability: detection.probability, ...ecoData }],
+      ecoScore: { totalCarbon, points }
+    });
   } catch (err) {
+    console.error(err); // Add this line
     res.status(500).json({ error: err.message });
   }
 });
