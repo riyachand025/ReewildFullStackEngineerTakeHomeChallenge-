@@ -51,11 +51,10 @@ function App() {
         // Extract the number from a string like "12 kg CO2"
         const carbonMatch = String(data.ecoScore.totalCarbon).match(/\d+(\.\d+)?/);
         const carbonValue = carbonMatch ? parseFloat(carbonMatch[0]) : null;
-        console.log(carbonMatch);
-        console.log(carbonValue);
+        
         if (carbonValue !== null) {
           setPoints(Math.floor(carbonValue / 2));
-          console.log(points);
+          
         } else {
           setPoints(null);
         }
