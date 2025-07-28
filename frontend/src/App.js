@@ -47,8 +47,15 @@ function App() {
       setEcoScore(data.ecoScore || null);
       setOffers([]); // or handle offers if you add that logic to /api/analyze-image
       // Use backend-calculated points
-      if (data.ecoScore && typeof data.ecoScore.points === 'number') {
-        setPoints(data.ecoScore.points);
+      if (data.ecoScore && data.ecoScore.totalCarbon) {
+        // Extract the number from a string like "12 kg CO2"
+        const carbonMatch = String(data.ecoScore.totalCarbon).match(/\\d+(\\.\\d+)?/);
+        const carbonValue = carbonMatch ? parseFloat(carbonMatch[0]) : null;
+        if (carbonValue !== null) {
+          setPoints(Math.floor(carbonValue / 2));
+        } else {
+          setPoints(null);
+        }
       } else {
         setPoints(null);
       }
