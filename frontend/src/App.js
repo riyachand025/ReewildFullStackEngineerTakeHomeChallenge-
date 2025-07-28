@@ -34,26 +34,30 @@ function App() {
       // Send image to backend for recognition and eco-score in one request
       const formData = new FormData();
       formData.append('image', image);
-      const response = await fetch('http://localhost:5050/analyze-image', {
+
+      const API_URL = process.env.REACT_APP_API_URL;
+      const res = await fetch(`${API_URL}analyze-image`, {
         method: 'POST',
         body: formData
       });
-      if (!response.ok) {
-        throw new Error('Failed to analyze image');
-      }
-      const data = await response.json();
-      const recognizedItems = data.items;
-      if (!recognizedItems || recognizedItems.length === 0) {
-        setError('No clothing detected in the image. Please try another image.');
-        setLoading(false);
-        return;
-      }
-      setResults(recognizedItems);
-      if (data.ecoScore) {
-        setEcoScore(data.ecoScore);
-      } else {
-        setEcoScore(null);
-      }
+
+      if (!res.ok) throw new Error('Image analysis failed');
+      const data = await res.json();
+      setResults(data.items || []);
+      // Eco-score
+      const ecoRes = await fetch(`${API_URL}eco-score`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: (data.items || []).map(i => i.name) })
+      });
+      if (!ecoRes.ok) throw new Error('Eco-score calculation failed');
+      const ecoData = await ecoRes.json();
+      setEcoScore(ecoData);
+      // Offers
+      const offersRes = await fetch(`${API_URL}offers?points=${ecoData.points}`);
+      if (!offersRes.ok) throw new Error('Failed to fetch offers');
+      const offersData = await offersRes.json();
+      setOffers(offersData.offers || []);
     } catch (err) {
       setError(err.message);
     } finally {
