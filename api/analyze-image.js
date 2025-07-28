@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     if (err) {
       return res.status(500).json({ error: 'Error parsing form data' });
     }
-    const file = files.image;
+    const file = Array.isArray(files.image) ? files.image[0] : files.image;
     if (!file) {
       return res.status(400).json({ error: 'No image uploaded' });
     }
