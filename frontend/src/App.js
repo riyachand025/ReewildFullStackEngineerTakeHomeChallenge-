@@ -49,6 +49,7 @@ function App() {
       // Use backend-calculated points
       if (data.ecoScore && data.ecoScore.totalCarbon) {
         // Extract the number from a string like "12 kg CO2"
+        console.log(data.ecoScore.totalCarbon);
         const carbonMatch = String(data.ecoScore.totalCarbon).match(/\\d+(\\.\\d+)?/);
         const carbonValue = carbonMatch ? parseFloat(carbonMatch[0]) : null;
         if (carbonValue !== null) {
@@ -111,7 +112,7 @@ function App() {
         <section className="eco-score-box" aria-live="polite">
           <h2>Eco-Score Summary</h2>
           <div className="eco-score-details">
-            <span><strong>Total Carbon:</strong> {ecoScore.totalCarbon} kg CO₂</span>
+            <span><strong>Total Carbon:</strong> {ecoScore.totalCarbon}</span>
             <span><strong>Eco-Reward Points:</strong> {points !== null ? points : 'N/A'}</span>
           </div>
         </section>
@@ -124,7 +125,7 @@ function App() {
               <article className="item-card" key={idx} tabIndex={0} aria-label={`Item: ${item.name}`}>
                 <h3>{item.name}</h3>
                 <div className="item-prob">Probability: {(item.probability * 100).toFixed(1)}%</div>
-                <div className="item-carbon">Carbon Score: {item.carbonScore} kg CO₂</div>
+                <div className="item-carbon">Carbon Score: {item.carbonScore}</div>
                 <div className="item-desc">{item.description || 'No description available.'}</div>
               </article>
             ))}
