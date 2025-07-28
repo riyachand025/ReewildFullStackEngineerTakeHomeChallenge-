@@ -26,8 +26,13 @@ export default async function handler(req, res) {
     if (!file) {
       return res.status(400).json({ error: 'No image uploaded' });
     }
-    // Use 'filepath' for Formidable v3+
-    const imageBuffer = await fs.readFile(file.filepath);
+    console.log('files:', files);
+    // Try both 'filepath' and 'path'
+    const filePath = file.filepath || file.path;
+    if (!filePath) {
+      return res.status(500).json({ error: 'File path not found in upload', file });
+    }
+    const imageBuffer = await fs.readFile(filePath);
     const base64Image = imageBuffer.toString('base64');
 
     try {
