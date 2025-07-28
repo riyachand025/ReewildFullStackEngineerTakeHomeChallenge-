@@ -46,9 +46,9 @@ function App() {
       setResults(data.items || []);
       setEcoScore(data.ecoScore || null);
       setOffers([]); // or handle offers if you add that logic to /api/analyze-image
-      // Calculate reward points
-      if (data.ecoScore && typeof data.ecoScore.totalCarbon === 'number') {
-        setPoints(Math.floor(data.ecoScore.totalCarbon / 2));
+      // Use backend-calculated points
+      if (data.ecoScore && typeof data.ecoScore.points === 'number') {
+        setPoints(data.ecoScore.points);
       } else {
         setPoints(null);
       }
