@@ -49,8 +49,7 @@ function App() {
       // Use backend-calculated points
       if (data.ecoScore && data.ecoScore.totalCarbon) {
         // Extract the number from a string like "12 kg CO2"
-        console.log(data.ecoScore.totalCarbon);
-        const carbonMatch = String(data.ecoScore.totalCarbon).match(/\\d+(\\.\\d+)?/);
+        const carbonMatch = String(data.ecoScore.totalCarbon).match(/\d+(\.\d+)?/);
         const carbonValue = carbonMatch ? parseFloat(carbonMatch[0]) : null;
         console.log(carbonMatch);
         console.log(carbonValue);
