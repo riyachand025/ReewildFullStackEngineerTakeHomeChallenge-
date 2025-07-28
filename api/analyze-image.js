@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   }
 
   // Parse multipart/form-data using formidable
-  const form = new formidable.IncomingForm();
+  const form = formidable();
   form.parse(req, async (err, fields, files) => {
     if (err) {
       return res.status(500).json({ error: 'Error parsing form data' });
