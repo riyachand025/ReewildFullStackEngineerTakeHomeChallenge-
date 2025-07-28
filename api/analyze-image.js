@@ -1,7 +1,7 @@
 import { buffer } from 'micro';
 import OpenAI from 'openai';
 import formidable from 'formidable';
-import fs from 'fs';
+import fs from 'fs/promises';
 
 export const config = {
   api: {
@@ -26,7 +26,8 @@ export default async function handler(req, res) {
     if (!file) {
       return res.status(400).json({ error: 'No image uploaded' });
     }
-    const imageBuffer = await fs.promises.readFile(file.filepath);
+    // Use 'filepath' for Formidable v3+
+    const imageBuffer = await fs.readFile(file.filepath);
     const base64Image = imageBuffer.toString('base64');
 
     try {
